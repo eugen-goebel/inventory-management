@@ -141,7 +141,7 @@ export default function Dashboard() {
                   formatter={(value: number) => formatEur(value)}
                   labelStyle={{ fontWeight: 600 }}
                 />
-                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="stock_value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

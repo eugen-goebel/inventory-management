@@ -30,6 +30,7 @@ def create_movement(db: Session, data: MovementCreate) -> StockMovement:
     else:
         product.current_stock += data.quantity
 
+    db.add(product)
     movement = StockMovement(**data.model_dump())
     db.add(movement)
     db.commit()

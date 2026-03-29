@@ -88,7 +88,7 @@ export function fetchMovements(params?: {
   const query = new URLSearchParams();
   if (params?.product_id) query.set("product_id", String(params.product_id));
   if (params?.movement_type && params.movement_type !== "all")
-    query.set("movement_type", params.movement_type);
+    query.set("type", params.movement_type);
   const qs = query.toString();
   return get<Movement[]>(`/api/movements${qs ? `?${qs}` : ""}`);
 }
@@ -130,7 +130,7 @@ export function deleteSupplier(id: number): Promise<void> {
 // Analytics
 
 export function fetchAnalytics(): Promise<DashboardAnalytics> {
-  return get<DashboardAnalytics>("/api/analytics");
+  return get<DashboardAnalytics>("/api/analytics/dashboard");
 }
 
 export { ApiError };
