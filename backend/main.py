@@ -36,8 +36,8 @@ app.add_middleware(
         "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(product_router)
@@ -57,7 +57,7 @@ if os.path.isdir(STATIC_DIR):
 
     @app.get("/{path:path}")
     def serve_frontend(path: str):
-        file_path = os.path.join(STATIC_DIR, path)
-        if os.path.isfile(file_path):
+        file_path = os.path.realpath(os.path.join(STATIC_DIR, path))
+        if file_path.startswith(os.path.realpath(STATIC_DIR)) and os.path.isfile(file_path):
             return FileResponse(file_path)
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
