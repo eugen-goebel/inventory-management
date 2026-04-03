@@ -13,8 +13,12 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from db.database import Base, get_db
-from models.orm import Product, Supplier, StockMovement
+from models.orm import Product, Supplier, StockMovement, User  # noqa: F401 — import to register with Base
+from agents.auth_service import hash_password, create_access_token
 from main import app
+
+# Ensure all ORM models are registered before create_all
+assert User.__tablename__ == "users"
 
 
 @pytest.fixture(scope="function")
@@ -32,9 +36,34 @@ def db_session(tmp_path):
         engine.dispose()
 
 
+class AuthenticatedTestClient:
+    """Wraps TestClient to inject an Authorization header on every request."""
+
+    def __init__(self, tc: TestClient, token: str):
+        self._tc = tc
+        self._headers = {"Authorization": f"Bearer {token}"}
+
+    def _merge(self, kwargs):
+        headers = {**self._headers, **(kwargs.pop("headers", {}) or {})}
+        kwargs["headers"] = headers
+        return kwargs
+
+    def get(self, url, **kw):
+        return self._tc.get(url, **self._merge(kw))
+
+    def post(self, url, **kw):
+        return self._tc.post(url, **self._merge(kw))
+
+    def put(self, url, **kw):
+        return self._tc.put(url, **self._merge(kw))
+
+    def delete(self, url, **kw):
+        return self._tc.delete(url, **self._merge(kw))
+
+
 @pytest.fixture(scope="function")
-def client(db_session):
-    """FastAPI TestClient with the DB dependency overridden."""
+def raw_client(db_session):
+    """Unauthenticated FastAPI TestClient for auth-specific tests."""
 
     def _override_get_db():
         try:
@@ -46,6 +75,88 @@ def client(db_session):
     with TestClient(app) as tc:
         yield tc
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def client(db_session):
+    """FastAPI TestClient with admin auth (backwards-compatible with existing tests)."""
+
+    def _override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    app.dependency_overrides[get_db] = _override_get_db
+
+    # Create an admin user for existing tests
+    admin = User(
+        username="testadmin",
+        email="testadmin@test.com",
+        hashed_password=hash_password("testpass"),
+        role="admin",
+    )
+    db_session.add(admin)
+    db_session.commit()
+    db_session.refresh(admin)
+    token = create_access_token(admin.id, admin.username, admin.role)
+
+    with TestClient(app) as tc:
+        yield AuthenticatedTestClient(tc, token)
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def admin_user(db_session):
+    """Create an admin user and return (user, token)."""
+    user = User(
+        username="admin",
+        email="admin@test.com",
+        hashed_password=hash_password("adminpass"),
+        role="admin",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(user.id, user.username, user.role)
+    return user, token
+
+
+@pytest.fixture()
+def staff_user(db_session):
+    """Create a staff user and return (user, token)."""
+    user = User(
+        username="staff",
+        email="staff@test.com",
+        hashed_password=hash_password("staffpass"),
+        role="staff",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(user.id, user.username, user.role)
+    return user, token
+
+
+@pytest.fixture()
+def viewer_user(db_session):
+    """Create a viewer user and return (user, token)."""
+    user = User(
+        username="viewer",
+        email="viewer@test.com",
+        hashed_password=hash_password("viewerpass"),
+        role="viewer",
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    token = create_access_token(user.id, user.username, user.role)
+    return user, token
+
+
+def auth_header(token: str) -> dict:
+    """Build an Authorization header dict."""
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture()

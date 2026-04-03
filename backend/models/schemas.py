@@ -109,3 +109,36 @@ class AnalyticsResponse(BaseModel):
     stock_by_category: list[dict]
     top_products: list[dict]
     recent_movements: list[dict]
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    email: str
+    password: str = Field(min_length=6, max_length=128)
+    role: Literal["admin", "staff", "viewer"] = "viewer"
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
