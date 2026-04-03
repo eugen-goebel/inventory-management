@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
-import { Pencil, Trash2, Plus, Search } from "lucide-react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Pencil, Trash2, Plus, Search, Upload } from "lucide-react";
 import {
   fetchProducts,
   fetchSuppliers,
   createProduct,
   updateProduct,
   deleteProduct,
+  importProductsCsv,
 } from "../api/client";
 import type { Product, ProductCreate, Supplier } from "../types";
 import Modal from "../components/Modal";
@@ -45,6 +46,15 @@ export default function Products() {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    imported: number;
+    skipped: number;
+    errors: { row: number; error: string }[];
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadProducts = useCallback(() => {
     setLoading(true);
@@ -119,17 +129,45 @@ export default function Products() {
     }
   }
 
+  async function handleImport() {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const result = await importProductsCsv(file);
+      setImportResult(result);
+      loadProducts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setImportResult(null);
+              setImportModalOpen(true);
+            }}
+            className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium"
+          >
+            <Upload className="w-4 h-4" />
+            Import CSV
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Product
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -385,6 +423,67 @@ export default function Products() {
           >
             {deleting ? "Deleting..." : "Delete"}
           </button>
+        </div>
+      </Modal>
+
+      {/* CSV Import Modal */}
+      <Modal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        title="Import Products from CSV"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Upload a CSV file with columns: <strong>name</strong>,{" "}
+            <strong>sku</strong>, <strong>category</strong>,{" "}
+            <strong>unit_price</strong>. Optional: supplier_id, reorder_level.
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          {importResult && (
+            <div className="bg-gray-50 rounded-lg p-3 text-sm">
+              <p className="text-green-700">
+                Imported: {importResult.imported}
+              </p>
+              <p className="text-yellow-700">
+                Skipped: {importResult.skipped}
+              </p>
+              {importResult.errors.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-red-600 cursor-pointer">
+                    {importResult.errors.length} error(s)
+                  </summary>
+                  <ul className="mt-1 space-y-1 text-xs text-red-600">
+                    {importResult.errors.map((e, i) => (
+                      <li key={i}>
+                        Row {e.row}: {e.error}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setImportModalOpen(false)}
+              className="px-4 py-2 text-sm text-gray-700 border rounded-lg hover:bg-gray-50"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {importing ? "Importing..." : "Upload & Import"}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>
