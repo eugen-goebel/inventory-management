@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -16,6 +16,7 @@ from models.schemas import (
     AnalyticsResponse,
 )
 from agents import product_service, movement_service, supplier_service, analytics_service
+from agents.import_service import import_products_from_csv, MAX_FILE_SIZE
 
 # ---------------------------------------------------------------------------
 # Routers
@@ -110,6 +111,27 @@ def update_product(
 @product_router.delete("/{product_id}", status_code=204)
 def delete_product(product_id: int, db: Session = Depends(get_db)):
     product_service.delete_product(db, product_id)
+
+
+@product_router.post("/import")
+async def import_products(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files are accepted")
+
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File exceeds 5 MB size limit")
+
+    try:
+        result = import_products_from_csv(db, content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {
+        "imported": result.imported,
+        "skipped": result.skipped,
+        "errors": result.errors[:50],
+    }
 
 
 # ---------------------------------------------------------------------------
