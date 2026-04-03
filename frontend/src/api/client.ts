@@ -79,6 +79,26 @@ export function deleteProduct(id: number): Promise<void> {
   return del(`/api/products/${id}`);
 }
 
+export interface ImportResult {
+  imported: number;
+  skipped: number;
+  errors: { row: number; error: string }[];
+}
+
+export async function importProductsCsv(file: File): Promise<ImportResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/products/import", {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new ApiError(body || res.statusText, res.status);
+  }
+  return res.json();
+}
+
 // Movements
 
 export function fetchMovements(params?: {
