@@ -13,6 +13,7 @@ from agents.routes import (
     supplier_router,
     analytics_router,
 )
+from agents.auth_routes import auth_router
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
@@ -37,9 +38,10 @@ app.add_middleware(
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
+app.include_router(auth_router)
 app.include_router(product_router)
 app.include_router(movement_router)
 app.include_router(supplier_router)
