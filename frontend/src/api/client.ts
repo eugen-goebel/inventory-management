@@ -6,6 +6,8 @@ import type {
   Supplier,
   SupplierCreate,
   DashboardAnalytics,
+  TokenResponse,
+  AuthUser,
 } from "../types";
 
 class ApiError extends Error {
@@ -16,12 +18,26 @@ class ApiError extends Error {
   }
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = localStorage.getItem("token");
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
+    headers: getAuthHeaders(),
     ...options,
   });
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
     const body = await res.text();
     throw new ApiError(body || res.statusText, res.status);
   }
@@ -88,8 +104,14 @@ export interface ImportResult {
 export async function importProductsCsv(file: File): Promise<ImportResult> {
   const formData = new FormData();
   formData.append("file", file);
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
   const res = await fetch("/api/products/import", {
     method: "POST",
+    headers,
     body: formData,
   });
   if (!res.ok) {
@@ -151,6 +173,25 @@ export function deleteSupplier(id: number): Promise<void> {
 
 export function fetchAnalytics(): Promise<DashboardAnalytics> {
   return get<DashboardAnalytics>("/api/analytics/dashboard");
+}
+
+// Auth
+
+export function loginUser(username: string, password: string): Promise<TokenResponse> {
+  return post<TokenResponse>("/api/auth/login", { username, password });
+}
+
+export function registerUser(
+  username: string,
+  email: string,
+  password: string,
+  role: string = "viewer",
+): Promise<TokenResponse> {
+  return post<TokenResponse>("/api/auth/register", { username, email, password, role });
+}
+
+export function fetchCurrentUser(): Promise<AuthUser> {
+  return get<AuthUser>("/api/auth/me");
 }
 
 export { ApiError };

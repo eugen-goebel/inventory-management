@@ -66,3 +66,18 @@ export interface DashboardAnalytics {
   top_products: { name: string; current_stock: number; value: number }[];
   recent_movements: { product_name: string; movement_type: string; quantity: number; created_at: string }[];
 }
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: AuthUser;
+}

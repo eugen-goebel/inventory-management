@@ -23,5 +23,5 @@ def get_db():
 
 def init_db():
     """Create all tables defined in ORM models."""
-    from models.orm import Product, StockMovement, Supplier  # noqa: F401
+    from models.orm import Product, StockMovement, Supplier, User  # noqa: F401
     Base.metadata.create_all(bind=engine)

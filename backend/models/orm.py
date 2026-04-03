@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    Boolean,
     Column,
     Integer,
     String,
@@ -25,6 +26,28 @@ CATEGORIES = [
 
 def _utcnow():
     return datetime.now(timezone.utc)
+
+
+ROLES = ["admin", "staff", "viewer"]
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, nullable=False, index=True)
+    email = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="viewer")
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime, default=_utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            f"role IN ({', '.join(repr(r) for r in ROLES)})",
+            name="valid_role",
+        ),
+    )
 
 
 class Supplier(Base):
