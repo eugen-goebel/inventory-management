@@ -14,9 +14,15 @@ auth_router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @auth_router.post("/register", response_model=TokenResponse, status_code=201)
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user account."""
+    """Register a new user account.
+
+    The first user registered bootstraps as admin. All subsequent users
+    are created as viewer regardless of any client-supplied role — role
+    escalation must happen out-of-band (direct DB or by an existing admin).
+    """
+    forced_role = "admin" if db.query(User).count() == 0 else "viewer"
     try:
-        user = register_user(db, data.username, data.email, data.password, data.role)
+        user = register_user(db, data.username, data.email, data.password, forced_role)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
