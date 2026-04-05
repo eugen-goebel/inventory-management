@@ -2,29 +2,62 @@
 
 import pytest
 
+from agents.auth_service import hash_password, create_access_token
+from models.orm import User
+
+
+def _make_user(db_session, username, role="viewer"):
+    """Create a user directly via the DB and return a signed token."""
+    user = User(
+        username=username,
+        email=f"{username}@test.com",
+        hashed_password=hash_password("secret123"),
+        role=role,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return create_access_token(user.id, user.username, user.role)
+
 
 class TestRegister:
-    def test_register_success(self, raw_client):
+    def test_first_user_bootstraps_as_admin(self, raw_client):
+        """The first user registered becomes admin to bootstrap the system."""
         resp = raw_client.post("/api/auth/register", json={
-            "username": "newuser",
-            "email": "new@test.com",
+            "username": "firstuser",
+            "email": "first@test.com",
             "password": "secret123",
         })
         assert resp.status_code == 201
         data = resp.json()
         assert "access_token" in data
-        assert data["user"]["username"] == "newuser"
-        assert data["user"]["role"] == "viewer"
+        assert data["user"]["username"] == "firstuser"
+        assert data["user"]["role"] == "admin"
 
-    def test_register_with_role(self, raw_client):
+    def test_subsequent_users_are_viewers(self, raw_client):
+        """After bootstrap, new users are always viewer."""
+        raw_client.post("/api/auth/register", json={
+            "username": "first", "email": "f@test.com", "password": "secret123",
+        })
         resp = raw_client.post("/api/auth/register", json={
-            "username": "staffuser",
-            "email": "staff@test.com",
-            "password": "secret123",
-            "role": "staff",
+            "username": "second", "email": "s@test.com", "password": "secret123",
         })
         assert resp.status_code == 201
-        assert resp.json()["user"]["role"] == "staff"
+        assert resp.json()["user"]["role"] == "viewer"
+
+    def test_client_supplied_role_is_ignored(self, raw_client):
+        """Client-supplied role must never escalate privileges."""
+        raw_client.post("/api/auth/register", json={
+            "username": "admin", "email": "a@test.com", "password": "secret123",
+        })
+        resp = raw_client.post("/api/auth/register", json={
+            "username": "attacker",
+            "email": "atk@test.com",
+            "password": "secret123",
+            "role": "admin",
+        })
+        assert resp.status_code == 201
+        assert resp.json()["user"]["role"] == "viewer"
 
     def test_register_duplicate_username(self, raw_client):
         raw_client.post("/api/auth/register", json={
@@ -106,55 +139,45 @@ class TestMe:
 
 
 class TestRoleBasedAccess:
-    def _register_and_get_token(self, raw_client, username, role="viewer"):
-        resp = raw_client.post("/api/auth/register", json={
-            "username": username,
-            "email": f"{username}@test.com",
-            "password": "secret123",
-            "role": role,
-        })
-        return resp.json()["access_token"]
-
-    def test_viewer_can_list_products(self, raw_client):
-        token = self._register_and_get_token(raw_client, "viewerlist", "viewer")
+    def test_viewer_can_list_products(self, raw_client, db_session):
+        token = _make_user(db_session, "viewerlist", "viewer")
         resp = raw_client.get("/api/products", headers={
             "Authorization": f"Bearer {token}",
         })
         assert resp.status_code == 200
 
-    def test_viewer_cannot_create_product(self, raw_client):
-        token = self._register_and_get_token(raw_client, "viewercreate", "viewer")
+    def test_viewer_cannot_create_product(self, raw_client, db_session):
+        token = _make_user(db_session, "viewercreate", "viewer")
         resp = raw_client.post("/api/products", json={
             "name": "Test", "sku": "TST-001", "category": "Elektronik",
             "unit_price": 10.0, "reorder_level": 5,
         }, headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 403
 
-    def test_staff_can_create_product(self, raw_client):
-        token = self._register_and_get_token(raw_client, "staffcreate", "staff")
+    def test_staff_can_create_product(self, raw_client, db_session):
+        token = _make_user(db_session, "staffcreate", "staff")
         resp = raw_client.post("/api/products", json={
             "name": "Test", "sku": "TST-002", "category": "Elektronik",
             "unit_price": 10.0, "reorder_level": 5,
         }, headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 201
 
-    def test_staff_cannot_delete_product(self, raw_client):
-        # Admin creates product first
-        admin_token = self._register_and_get_token(raw_client, "admindel", "admin")
+    def test_staff_cannot_delete_product(self, raw_client, db_session):
+        admin_token = _make_user(db_session, "admindel", "admin")
         create_resp = raw_client.post("/api/products", json={
             "name": "DelTest", "sku": "DEL-001", "category": "Elektronik",
             "unit_price": 5.0, "reorder_level": 1,
         }, headers={"Authorization": f"Bearer {admin_token}"})
         pid = create_resp.json()["id"]
 
-        staff_token = self._register_and_get_token(raw_client, "staffdel", "staff")
+        staff_token = _make_user(db_session, "staffdel", "staff")
         resp = raw_client.delete(f"/api/products/{pid}", headers={
             "Authorization": f"Bearer {staff_token}",
         })
         assert resp.status_code == 403
 
-    def test_admin_can_delete_product(self, raw_client):
-        admin_token = self._register_and_get_token(raw_client, "admindel2", "admin")
+    def test_admin_can_delete_product(self, raw_client, db_session):
+        admin_token = _make_user(db_session, "admindel2", "admin")
         create_resp = raw_client.post("/api/products", json={
             "name": "DelTest2", "sku": "DEL-002", "category": "Elektronik",
             "unit_price": 5.0, "reorder_level": 1,
