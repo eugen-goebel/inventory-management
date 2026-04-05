@@ -7,6 +7,20 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+## Screenshots
+
+**Dashboard** — KPI cards, stock value by category, top products by value
+![Dashboard](docs/screenshots/01-dashboard.png)
+
+**Products** — Product list with search, category filter, and low-stock indicator
+![Products](docs/screenshots/02-products.png)
+
+**Movements** — Audit trail of inbound/outbound stock movements
+![Movements](docs/screenshots/03-movements.png)
+
+**Login** — JWT authentication with role-based access control (admin/staff/viewer)
+![Login](docs/screenshots/04-login.png)
+
 ## Architecture
 
 ```
