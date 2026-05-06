@@ -1,7 +1,7 @@
 fastapi>=0.115.0
 uvicorn>=0.32.0
 sqlalchemy>=2.0.0
-pydantic>=2.0.0
+pydantic>=2.13.3
 python-dotenv>=1.0.0
 python-multipart>=0.0.12
 PyJWT>=2.8.0
