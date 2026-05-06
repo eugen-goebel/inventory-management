@@ -5,6 +5,7 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 ![CI](https://github.com/eugen-goebel/inventory-management/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6)
+![Tests](https://img.shields.io/badge/Tests-Backend_30+_Frontend_8-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Screenshots
@@ -54,7 +55,7 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 - **Supplier Management**: CRUD with product count tracking
 - **Analytics API**: Real-time stock value, category breakdown, movement history
 - **Data Validation**: Pydantic v2 schemas, unique SKU enforcement, stock integrity checks
-- **30+ Backend Tests** with pytest
+- **30+ Backend Tests** with pytest, **8 Frontend Tests** with Vitest + Testing Library
 
 ## Tech Stack
 
@@ -157,9 +158,20 @@ inventory-management/
 
 ## Running Tests
 
+**Backend (pytest):**
+
 ```bash
 cd backend
 pytest -v
+```
+
+**Frontend (Vitest + React Testing Library):**
+
+```bash
+cd frontend
+npm test           # one-shot run
+npm run test:watch # watch mode while developing
+npm run test:ui    # interactive UI in browser
 ```
 
 ## License
