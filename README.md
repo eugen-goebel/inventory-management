@@ -112,6 +112,7 @@ Once the backend is running, visit http://localhost:8000/docs for interactive Sw
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | /api/products | List products (search, category, low_stock filter) |
+| GET | /api/products/export | Download filtered products as CSV |
 | POST | /api/products | Create product |
 | PUT | /api/products/{id} | Update product |
 | DELETE | /api/products/{id} | Delete product (only if stock is 0) |
