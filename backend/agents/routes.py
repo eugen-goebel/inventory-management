@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from db.database import get_db
@@ -17,6 +18,7 @@ from models.schemas import (
 )
 from agents import product_service, movement_service, supplier_service, analytics_service
 from agents.import_service import import_products_from_csv, MAX_FILE_SIZE
+from agents.export_service import export_products_to_csv
 from agents.auth_deps import get_current_user, require_role
 from models.orm import User
 
@@ -89,6 +91,22 @@ def list_products(
 ):
     products = product_service.list_products(db, search, category, low_stock)
     return [_product_response(p) for p in products]
+
+
+@product_router.get("/export")
+def export_products(
+    search: Optional[str] = Query(None),
+    category: Optional[str] = Query(None),
+    low_stock: bool = Query(False),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    csv_content = export_products_to_csv(db, search, category, low_stock)
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="products.csv"'},
+    )
 
 
 @product_router.get("/{product_id}", response_model=ProductResponse)
