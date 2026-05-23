@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Pencil, Trash2, Plus, Search, Upload } from "lucide-react";
+import { Pencil, Trash2, Plus, Search, Upload, Download } from "lucide-react";
 import {
   fetchProducts,
   fetchSuppliers,
@@ -7,6 +7,7 @@ import {
   updateProduct,
   deleteProduct,
   importProductsCsv,
+  exportProductsCsv,
 } from "../api/client";
 import type { Product, ProductCreate, Supplier } from "../types";
 import Modal from "../components/Modal";
@@ -46,6 +47,8 @@ export default function Products() {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [exporting, setExporting] = useState(false);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -129,6 +132,29 @@ export default function Products() {
     }
   }
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const blob = await exportProductsCsv({
+        search: search || undefined,
+        category: categoryFilter || undefined,
+        low_stock: lowStockOnly || undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "products.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleImport() {
     const file = fileInputRef.current?.files?.[0];
     if (!file) return;
@@ -150,6 +176,14 @@ export default function Products() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Products</h1>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
           <button
             onClick={() => {
               setImportResult(null);
