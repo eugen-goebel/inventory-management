@@ -101,6 +101,31 @@ export interface ImportResult {
   errors: { row: number; error: string }[];
 }
 
+export async function exportProductsCsv(params?: {
+  search?: string;
+  category?: string;
+  low_stock?: boolean;
+}): Promise<Blob> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+  if (params?.category) query.set("category", params.category);
+  if (params?.low_stock) query.set("low_stock", "true");
+  const qs = query.toString();
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const res = await fetch(`/api/products/export${qs ? `?${qs}` : ""}`, {
+    headers,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new ApiError(body || res.statusText, res.status);
+  }
+  return res.blob();
+}
+
 export async function importProductsCsv(file: File): Promise<ImportResult> {
   const formData = new FormData();
   formData.append("file", file);
