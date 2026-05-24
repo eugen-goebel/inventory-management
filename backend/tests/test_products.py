@@ -3,6 +3,79 @@
 import pytest
 
 
+class TestPaginationAndSorting:
+    """GET /api/products — pagination and sort behaviour."""
+
+    def test_default_pagination_metadata(self, client, seed_data):
+        resp = client.get("/api/products")
+        data = resp.json()
+        assert data["limit"] == 25
+        assert data["offset"] == 0
+        assert data["total"] == 5
+
+    def test_limit_caps_items_returned(self, client, seed_data):
+        resp = client.get("/api/products", params={"limit": 2})
+        data = resp.json()
+        assert len(data["items"]) == 2
+        assert data["total"] == 5  # total ignores limit
+
+    def test_offset_skips_items(self, client, seed_data):
+        first = client.get("/api/products", params={"limit": 2, "offset": 0}).json()
+        second = client.get("/api/products", params={"limit": 2, "offset": 2}).json()
+        first_skus = [p["sku"] for p in first["items"]]
+        second_skus = [p["sku"] for p in second["items"]]
+        assert set(first_skus).isdisjoint(second_skus)
+
+    def test_limit_below_minimum_rejected(self, client, seed_data):
+        resp = client.get("/api/products", params={"limit": 0})
+        assert resp.status_code == 422
+
+    def test_limit_above_maximum_rejected(self, client, seed_data):
+        resp = client.get("/api/products", params={"limit": 101})
+        assert resp.status_code == 422
+
+    def test_negative_offset_rejected(self, client, seed_data):
+        resp = client.get("/api/products", params={"offset": -1})
+        assert resp.status_code == 422
+
+    @pytest.mark.parametrize(
+        "field",
+        ["name", "sku", "category", "unit_price", "current_stock"],
+    )
+    def test_sort_asc(self, client, seed_data, field):
+        resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "asc"})
+        items = resp.json()["items"]
+        values = [item[field] for item in items]
+        assert values == sorted(values)
+
+    @pytest.mark.parametrize(
+        "field",
+        ["name", "sku", "category", "unit_price", "current_stock"],
+    )
+    def test_sort_desc(self, client, seed_data, field):
+        resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "desc"})
+        items = resp.json()["items"]
+        values = [item[field] for item in items]
+        assert values == sorted(values, reverse=True)
+
+    def test_invalid_sort_by_rejected(self, client, seed_data):
+        resp = client.get("/api/products", params={"sort_by": "supplier_name"})
+        assert resp.status_code == 400
+
+    def test_invalid_sort_dir_rejected(self, client, seed_data):
+        resp = client.get("/api/products", params={"sort_dir": "sideways"})
+        assert resp.status_code == 400
+
+    def test_filters_combine_with_pagination(self, client, seed_data):
+        resp = client.get(
+            "/api/products",
+            params={"category": "Elektronik", "limit": 10},
+        )
+        data = resp.json()
+        assert data["total"] == 1  # only one Elektronik product in seed
+        assert all(item["category"] == "Elektronik" for item in data["items"])
+
+
 class TestListProducts:
     """GET /api/products"""
 
