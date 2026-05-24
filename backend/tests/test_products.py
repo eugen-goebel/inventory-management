@@ -40,7 +40,7 @@ class TestPaginationAndSorting:
 
     @pytest.mark.parametrize(
         "field",
-        ["name", "sku", "category", "unit_price", "current_stock"],
+        ["name", "sku", "category", "unit_price", "current_stock", "reorder_level", "supplier_name"],
     )
     def test_sort_asc(self, client, seed_data, field):
         resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "asc"})
@@ -50,7 +50,7 @@ class TestPaginationAndSorting:
 
     @pytest.mark.parametrize(
         "field",
-        ["name", "sku", "category", "unit_price", "current_stock"],
+        ["name", "sku", "category", "unit_price", "current_stock", "reorder_level", "supplier_name"],
     )
     def test_sort_desc(self, client, seed_data, field):
         resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "desc"})
@@ -59,7 +59,7 @@ class TestPaginationAndSorting:
         assert values == sorted(values, reverse=True)
 
     def test_invalid_sort_by_rejected(self, client, seed_data):
-        resp = client.get("/api/products", params={"sort_by": "supplier_name"})
+        resp = client.get("/api/products", params={"sort_by": "created_at"})
         assert resp.status_code == 400
 
     def test_invalid_sort_dir_rejected(self, client, seed_data):

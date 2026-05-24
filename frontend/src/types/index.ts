@@ -32,8 +32,10 @@ export type ProductSortField =
   | "name"
   | "sku"
   | "category"
+  | "supplier_name"
   | "unit_price"
-  | "current_stock";
+  | "current_stock"
+  | "reorder_level";
 
 export type SortDirection = "asc" | "desc";
 
