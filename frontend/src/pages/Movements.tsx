@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Plus } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   fetchMovements,
   fetchProducts,
@@ -72,11 +73,12 @@ export default function Movements() {
     setSaving(true);
     try {
       await createMovement(form);
+      toast.success("Movement recorded");
       setModalOpen(false);
       setForm(emptyForm);
       loadMovements();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to record movement");
+      toast.error(err instanceof Error ? err.message : "Failed to record movement");
     } finally {
       setSaving(false);
     }
