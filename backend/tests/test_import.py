@@ -107,9 +107,9 @@ class TestImportEndpoint:
         assert data["imported"] == 1
 
         # Verify the product was created with the supplier
-        products = client.get("/api/products", params={"search": "WS-001"}).json()
-        assert len(products) == 1
-        assert products[0]["supplier_id"] == supplier_id
+        data = client.get("/api/products", params={"search": "WS-001"}).json()
+        assert data["total"] == 1
+        assert data["items"][0]["supplier_id"] == supplier_id
 
     def test_missing_required_field_in_row(self, client, seed_data):
         csv = self._csv_bytes([
@@ -133,7 +133,7 @@ class TestImportEndpoint:
             "/api/products/import",
             files={"file": ("products.csv", io.BytesIO(csv), "text/csv")},
         )
-        products = client.get("/api/products", params={"search": "IMP-001"}).json()
-        assert len(products) == 1
-        assert products[0]["name"] == "Imported Product"
-        assert products[0]["current_stock"] == 0
+        data = client.get("/api/products", params={"search": "IMP-001"}).json()
+        assert data["total"] == 1
+        assert data["items"][0]["name"] == "Imported Product"
+        assert data["items"][0]["current_stock"] == 0
