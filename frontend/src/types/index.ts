@@ -21,6 +21,22 @@ export interface ProductCreate {
   reorder_level: number;
 }
 
+export interface PaginatedProducts {
+  items: Product[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type ProductSortField =
+  | "name"
+  | "sku"
+  | "category"
+  | "unit_price"
+  | "current_stock";
+
+export type SortDirection = "asc" | "desc";
+
 export interface Movement {
   id: number;
   product_id: number;

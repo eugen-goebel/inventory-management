@@ -1,5 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Pencil, Trash2, Plus, Search, Upload, Download } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Search,
+  Upload,
+  Download,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+} from "lucide-react";
 import {
   fetchProducts,
   fetchSuppliers,
@@ -9,7 +19,13 @@ import {
   importProductsCsv,
   exportProductsCsv,
 } from "../api/client";
-import type { Product, ProductCreate, Supplier } from "../types";
+import type {
+  Product,
+  ProductCreate,
+  Supplier,
+  ProductSortField,
+  SortDirection,
+} from "../types";
 import Modal from "../components/Modal";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -30,8 +46,11 @@ const emptyForm: ProductCreate = {
   reorder_level: 0,
 };
 
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,6 +58,11 @@ export default function Products() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [lowStockOnly, setLowStockOnly] = useState(false);
+
+  const [sortBy, setSortBy] = useState<ProductSortField>("name");
+  const [sortDir, setSortDir] = useState<SortDirection>("asc");
+  const [limit, setLimit] = useState(25);
+  const [offset, setOffset] = useState(0);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -65,11 +89,44 @@ export default function Products() {
       search: search || undefined,
       category: categoryFilter || undefined,
       low_stock: lowStockOnly || undefined,
+      sort_by: sortBy,
+      sort_dir: sortDir,
+      limit,
+      offset,
     })
-      .then(setProducts)
+      .then((data) => {
+        setProducts(data.items);
+        setTotal(data.total);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [search, categoryFilter, lowStockOnly]);
+  }, [search, categoryFilter, lowStockOnly, sortBy, sortDir, limit, offset]);
+
+  // Reset to the first page whenever filters or page size change
+  useEffect(() => {
+    setOffset(0);
+  }, [search, categoryFilter, lowStockOnly, limit]);
+
+  function toggleSort(field: ProductSortField) {
+    if (sortBy === field) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortDir("asc");
+    }
+    setOffset(0);
+  }
+
+  function SortIcon({ field }: { field: ProductSortField }) {
+    if (sortBy !== field) {
+      return <ChevronsUpDown className="w-3 h-3 inline-block ml-1 text-gray-400" />;
+    }
+    return sortDir === "asc" ? (
+      <ChevronUp className="w-3 h-3 inline-block ml-1 text-blue-600" />
+    ) : (
+      <ChevronDown className="w-3 h-3 inline-block ml-1 text-blue-600" />
+    );
+  }
 
   useEffect(() => {
     loadProducts();
@@ -251,12 +308,42 @@ export default function Products() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-gray-50 text-left text-gray-500">
-                <th className="px-4 py-3 font-medium">SKU</th>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Category</th>
+                <th
+                  onClick={() => toggleSort("sku")}
+                  className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
+                >
+                  SKU
+                  <SortIcon field="sku" />
+                </th>
+                <th
+                  onClick={() => toggleSort("name")}
+                  className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
+                >
+                  Name
+                  <SortIcon field="name" />
+                </th>
+                <th
+                  onClick={() => toggleSort("category")}
+                  className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
+                >
+                  Category
+                  <SortIcon field="category" />
+                </th>
                 <th className="px-4 py-3 font-medium">Supplier</th>
-                <th className="px-4 py-3 font-medium text-right">Price</th>
-                <th className="px-4 py-3 font-medium text-right">Stock</th>
+                <th
+                  onClick={() => toggleSort("unit_price")}
+                  className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
+                >
+                  Price
+                  <SortIcon field="unit_price" />
+                </th>
+                <th
+                  onClick={() => toggleSort("current_stock")}
+                  className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
+                >
+                  Stock
+                  <SortIcon field="current_stock" />
+                </th>
                 <th className="px-4 py-3 font-medium text-right">Reorder Level</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
@@ -313,6 +400,47 @@ export default function Products() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && total > 0 && (
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+          <div className="flex items-center gap-3">
+            <span>
+              Showing {offset + 1}-{Math.min(offset + limit, total)} of {total}
+            </span>
+            <select
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              className="border rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Page size"
+            >
+              {PAGE_SIZE_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} / page
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOffset(Math.max(0, offset - limit))}
+              disabled={offset === 0}
+              className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            <span>
+              Page {Math.floor(offset / limit) + 1} of {Math.max(1, Math.ceil(total / limit))}
+            </span>
+            <button
+              onClick={() => setOffset(offset + limit)}
+              disabled={offset + limit >= total}
+              className="px-3 py-1 border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       )}
 
