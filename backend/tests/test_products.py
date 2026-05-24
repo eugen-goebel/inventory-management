@@ -10,29 +10,30 @@ class TestListProducts:
         resp = client.get("/api/products")
         assert resp.status_code == 200
         data = resp.json()
-        assert isinstance(data, list)
-        assert len(data) == 5
+        assert isinstance(data["items"], list)
+        assert data["total"] == 5
+        assert len(data["items"]) == 5
 
     def test_search_filters_by_name(self, client, seed_data):
         resp = client.get("/api/products", params={"search": "Laptop"})
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data) == 1
-        assert data[0]["name"] == "Laptop Pro 15"
+        assert data["total"] == 1
+        assert data["items"][0]["name"] == "Laptop Pro 15"
 
     def test_search_filters_by_sku(self, client, seed_data):
         resp = client.get("/api/products", params={"search": "NK-001"})
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data) == 1
-        assert data[0]["sku"] == "NK-001"
+        assert data["total"] == 1
+        assert data["items"][0]["sku"] == "NK-001"
 
     def test_filter_by_category(self, client, seed_data):
         resp = client.get("/api/products", params={"category": "Elektronik"})
         assert resp.status_code == 200
         data = resp.json()
-        assert len(data) == 1
-        assert data[0]["category"] == "Elektronik"
+        assert data["total"] == 1
+        assert data["items"][0]["category"] == "Elektronik"
 
     def test_filter_low_stock(self, client, seed_data):
         """Products where current_stock <= reorder_level should be returned."""
@@ -43,8 +44,8 @@ class TestListProducts:
         # Schreibtischstuhl: stock=5, reorder=10 -> low stock
         # USB-Maus: stock=10, reorder=20 -> low stock
         # Druckerpapier: stock=5, reorder=100 -> low stock
-        assert len(data) >= 3
-        for item in data:
+        assert data["total"] >= 3
+        for item in data["items"]:
             assert item["current_stock"] <= item["reorder_level"]
 
 

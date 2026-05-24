@@ -1,19 +1,27 @@
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Query, Session
 
 from models.orm import Product
 from models.schemas import ProductCreate, ProductUpdate
 
 
-def list_products(
+SORTABLE_FIELDS = {
+    "name": Product.name,
+    "sku": Product.sku,
+    "category": Product.category,
+    "unit_price": Product.unit_price,
+    "current_stock": Product.current_stock,
+}
+
+
+def _filter_query(
     db: Session,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
-    low_stock_only: bool = False,
-) -> list[Product]:
-    """Return products with optional filtering."""
+    search: Optional[str],
+    category: Optional[str],
+    low_stock_only: bool,
+) -> Query:
     query = db.query(Product)
 
     if search:
@@ -28,7 +36,39 @@ def list_products(
     if low_stock_only:
         query = query.filter(Product.current_stock <= Product.reorder_level)
 
-    return query.order_by(Product.name).all()
+    return query
+
+
+def list_products(
+    db: Session,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    low_stock_only: bool = False,
+    sort_by: str = "name",
+    sort_dir: str = "asc",
+    limit: Optional[int] = None,
+    offset: int = 0,
+) -> list[Product]:
+    """Return products with optional filtering, sorting and pagination."""
+    query = _filter_query(db, search, category, low_stock_only)
+
+    column = SORTABLE_FIELDS[sort_by]
+    query = query.order_by(column.desc() if sort_dir == "desc" else column.asc())
+
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
+
+    return query.all()
+
+
+def count_products(
+    db: Session,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    low_stock_only: bool = False,
+) -> int:
+    """Count products matching the same filters as list_products."""
+    return _filter_query(db, search, category, low_stock_only).count()
 
 
 def get_product(db: Session, product_id: int) -> Product:

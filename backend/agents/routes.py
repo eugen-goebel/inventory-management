@@ -9,6 +9,7 @@ from models.schemas import (
     ProductCreate,
     ProductUpdate,
     ProductResponse,
+    PaginatedProductsResponse,
     MovementCreate,
     MovementResponse,
     SupplierCreate,
@@ -81,16 +82,39 @@ def _supplier_response(supplier) -> dict:
 # Product endpoints
 # ---------------------------------------------------------------------------
 
-@product_router.get("", response_model=list[ProductResponse])
+@product_router.get("", response_model=PaginatedProductsResponse)
 def list_products(
     search: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     low_stock: bool = Query(False),
+    sort_by: str = Query("name"),
+    sort_dir: str = Query("asc"),
+    limit: int = Query(25, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    products = product_service.list_products(db, search, category, low_stock)
-    return [_product_response(p) for p in products]
+    if sort_by not in product_service.SORTABLE_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sort_by '{sort_by}'. Allowed: {sorted(product_service.SORTABLE_FIELDS)}",
+        )
+    if sort_dir not in {"asc", "desc"}:
+        raise HTTPException(
+            status_code=400,
+            detail="sort_dir must be 'asc' or 'desc'",
+        )
+
+    products = product_service.list_products(
+        db, search, category, low_stock, sort_by, sort_dir, limit, offset
+    )
+    total = product_service.count_products(db, search, category, low_stock)
+    return {
+        "items": [_product_response(p) for p in products],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @product_router.get("/export")
