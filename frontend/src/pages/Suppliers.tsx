@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Pencil, Trash2, Plus, Search } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   fetchSuppliers,
   createSupplier,
@@ -72,13 +73,15 @@ export default function Suppliers() {
     try {
       if (editingId) {
         await updateSupplier(editingId, form);
+        toast.success("Supplier updated");
       } else {
         await createSupplier(form);
+        toast.success("Supplier created");
       }
       setModalOpen(false);
       loadSuppliers();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save supplier");
+      toast.error(err instanceof Error ? err.message : "Failed to save supplier");
     } finally {
       setSaving(false);
     }
@@ -90,6 +93,7 @@ export default function Suppliers() {
     setDeleteError("");
     try {
       await deleteSupplier(deleteId);
+      toast.success("Supplier deleted");
       setDeleteId(null);
       loadSuppliers();
     } catch (err) {
