@@ -62,7 +62,9 @@ export default function Movements() {
   }, [loadMovements]);
 
   useEffect(() => {
-    fetchProducts().then(setProducts).catch(() => {});
+    fetchProducts({ limit: 100 })
+      .then((data) => setProducts(data.items))
+      .catch(() => {});
   }, []);
 
   async function handleSave(e: React.FormEvent) {

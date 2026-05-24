@@ -42,6 +42,13 @@ class ProductResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PaginatedProductsResponse(BaseModel):
+    items: list[ProductResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 # ---------------------------------------------------------------------------
 # Stock Movement
 # ---------------------------------------------------------------------------

@@ -1,6 +1,9 @@
 import type {
   Product,
   ProductCreate,
+  PaginatedProducts,
+  ProductSortField,
+  SortDirection,
   Movement,
   MovementCreate,
   Supplier,
@@ -67,13 +70,21 @@ export function fetchProducts(params?: {
   search?: string;
   category?: string;
   low_stock?: boolean;
-}): Promise<Product[]> {
+  sort_by?: ProductSortField;
+  sort_dir?: SortDirection;
+  limit?: number;
+  offset?: number;
+}): Promise<PaginatedProducts> {
   const query = new URLSearchParams();
   if (params?.search) query.set("search", params.search);
   if (params?.category) query.set("category", params.category);
   if (params?.low_stock) query.set("low_stock", "true");
+  if (params?.sort_by) query.set("sort_by", params.sort_by);
+  if (params?.sort_dir) query.set("sort_dir", params.sort_dir);
+  if (params?.limit !== undefined) query.set("limit", String(params.limit));
+  if (params?.offset !== undefined) query.set("offset", String(params.offset));
   const qs = query.toString();
-  return get<Product[]>(`/api/products${qs ? `?${qs}` : ""}`);
+  return get<PaginatedProducts>(`/api/products${qs ? `?${qs}` : ""}`);
 }
 
 export function fetchProduct(id: number): Promise<Product> {
