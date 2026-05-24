@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronsUpDown,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   fetchProducts,
   fetchSuppliers,
@@ -163,13 +164,15 @@ export default function Products() {
     try {
       if (editingId) {
         await updateProduct(editingId, form);
+        toast.success("Product updated");
       } else {
         await createProduct(form);
+        toast.success("Product created");
       }
       setModalOpen(false);
       loadProducts();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to save product");
+      toast.error(err instanceof Error ? err.message : "Failed to save product");
     } finally {
       setSaving(false);
     }
@@ -180,10 +183,11 @@ export default function Products() {
     setDeleting(true);
     try {
       await deleteProduct(deleteId);
+      toast.success("Product deleted");
       setDeleteId(null);
       loadProducts();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to delete product");
+      toast.error(err instanceof Error ? err.message : "Failed to delete product");
     } finally {
       setDeleting(false);
     }
@@ -206,7 +210,7 @@ export default function Products() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Export failed");
+      toast.error(err instanceof Error ? err.message : "Export failed");
     } finally {
       setExporting(false);
     }
@@ -220,9 +224,15 @@ export default function Products() {
     try {
       const result = await importProductsCsv(file);
       setImportResult(result);
+      if (result.imported > 0) {
+        toast.success(`Imported ${result.imported} product(s)`);
+      }
+      if (result.skipped > 0) {
+        toast.error(`Skipped ${result.skipped} row(s) — see details in the dialog`);
+      }
       loadProducts();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Import failed");
+      toast.error(err instanceof Error ? err.message : "Import failed");
     } finally {
       setImporting(false);
     }
