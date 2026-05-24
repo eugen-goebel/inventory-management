@@ -329,7 +329,13 @@ export default function Products() {
                   Category
                   <SortIcon field="category" />
                 </th>
-                <th className="px-4 py-3 font-medium">Supplier</th>
+                <th
+                  onClick={() => toggleSort("supplier_name")}
+                  className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
+                >
+                  Supplier
+                  <SortIcon field="supplier_name" />
+                </th>
                 <th
                   onClick={() => toggleSort("unit_price")}
                   className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
@@ -344,7 +350,13 @@ export default function Products() {
                   Stock
                   <SortIcon field="current_stock" />
                 </th>
-                <th className="px-4 py-3 font-medium text-right">Reorder Level</th>
+                <th
+                  onClick={() => toggleSort("reorder_level")}
+                  className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
+                >
+                  Reorder Level
+                  <SortIcon field="reorder_level" />
+                </th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>

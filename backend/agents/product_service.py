@@ -3,17 +3,20 @@ from typing import Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
-from models.orm import Product
+from models.orm import Product, Supplier
 from models.schemas import ProductCreate, ProductUpdate
 
 
-SORTABLE_FIELDS = {
+_DIRECT_SORTABLE = {
     "name": Product.name,
     "sku": Product.sku,
     "category": Product.category,
     "unit_price": Product.unit_price,
     "current_stock": Product.current_stock,
+    "reorder_level": Product.reorder_level,
 }
+
+SORTABLE_FIELDS = set(_DIRECT_SORTABLE) | {"supplier_name"}
 
 
 def _filter_query(
@@ -52,7 +55,11 @@ def list_products(
     """Return products with optional filtering, sorting and pagination."""
     query = _filter_query(db, search, category, low_stock_only)
 
-    column = SORTABLE_FIELDS[sort_by]
+    if sort_by == "supplier_name":
+        query = query.outerjoin(Supplier, Product.supplier_id == Supplier.id)
+        column = Supplier.name
+    else:
+        column = _DIRECT_SORTABLE[sort_by]
     query = query.order_by(column.desc() if sort_dir == "desc" else column.asc())
 
     if limit is not None:
