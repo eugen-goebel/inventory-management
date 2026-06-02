@@ -10,16 +10,16 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 
 ## Screenshots
 
-**Dashboard** — KPI cards, stock value by category, top products by value
+**Dashboard**: KPI cards, stock value by category, top products by value
 ![Dashboard](docs/screenshots/01-dashboard.png)
 
-**Products** — Product list with search, category filter, and low-stock indicator
+**Products**: Product list with search, category filter, and low-stock indicator
 ![Products](docs/screenshots/02-products.png)
 
-**Movements** — Audit trail of inbound/outbound stock movements
+**Movements**: Audit trail of inbound/outbound stock movements
 ![Movements](docs/screenshots/03-movements.png)
 
-**Login** — JWT authentication with role-based access control (admin/staff/viewer)
+**Login**: JWT authentication with role-based access control (admin/staff/viewer)
 ![Login](docs/screenshots/04-login.png)
 
 ## Architecture
