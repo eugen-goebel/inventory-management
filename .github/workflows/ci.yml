@@ -81,3 +81,28 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build and start the stack
+        run: docker compose up -d --build
+
+      - name: Wait for the API through the frontend proxy
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8080/api/health >/dev/null; then echo "stack is up"; exit 0; fi
+            sleep 3
+          done
+          echo "stack did not become healthy"
+          docker compose logs
+          exit 1
+
+      - name: Check the frontend serves the app
+        run: curl -fsS http://localhost:8080/ | grep -qi "<!doctype html"
+
+      - name: Tear down
+        if: always()
+        run: docker compose down
