@@ -16,3 +16,8 @@ backend/db/*.db
 # Frontend
 frontend/node_modules/
 frontend/dist/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
