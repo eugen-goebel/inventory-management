@@ -40,7 +40,15 @@ class TestPaginationAndSorting:
 
     @pytest.mark.parametrize(
         "field",
-        ["name", "sku", "category", "unit_price", "current_stock", "reorder_level", "supplier_name"],
+        [
+            "name",
+            "sku",
+            "category",
+            "unit_price",
+            "current_stock",
+            "reorder_level",
+            "supplier_name",
+        ],
     )
     def test_sort_asc(self, client, seed_data, field):
         resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "asc"})
@@ -50,7 +58,15 @@ class TestPaginationAndSorting:
 
     @pytest.mark.parametrize(
         "field",
-        ["name", "sku", "category", "unit_price", "current_stock", "reorder_level", "supplier_name"],
+        [
+            "name",
+            "sku",
+            "category",
+            "unit_price",
+            "current_stock",
+            "reorder_level",
+            "supplier_name",
+        ],
     )
     def test_sort_desc(self, client, seed_data, field):
         resp = client.get("/api/products", params={"sort_by": field, "sort_dir": "desc"})

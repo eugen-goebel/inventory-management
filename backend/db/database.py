@@ -1,6 +1,7 @@
 import os
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'inventory.db')}"
@@ -24,4 +25,5 @@ def get_db():
 def init_db():
     """Create all tables defined in ORM models."""
     from models.orm import Product, StockMovement, Supplier, User  # noqa: F401
+
     Base.metadata.create_all(bind=engine)

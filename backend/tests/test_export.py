@@ -67,9 +67,7 @@ class TestExportProducts:
             assert int(row["current_stock"]) <= int(row["reorder_level"])
 
     def test_empty_result_returns_header_only(self, client, seed_data):
-        resp = client.get(
-            "/api/products/export", params={"search": "no-such-product"}
-        )
+        resp = client.get("/api/products/export", params={"search": "no-such-product"})
         assert resp.status_code == 200
         rows = self._parse_csv(resp.text)
         assert rows == []

@@ -1,27 +1,25 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from agents import analytics_service, movement_service, product_service, supplier_service
+from agents.auth_deps import get_current_user, require_role
+from agents.export_service import export_products_to_csv
+from agents.import_service import MAX_FILE_SIZE, import_products_from_csv
 from db.database import get_db
+from models.orm import User
 from models.schemas import (
-    ProductCreate,
-    ProductUpdate,
-    ProductResponse,
-    PaginatedProductsResponse,
+    AnalyticsResponse,
     MovementCreate,
     MovementResponse,
+    PaginatedProductsResponse,
+    ProductCreate,
+    ProductResponse,
+    ProductUpdate,
     SupplierCreate,
-    SupplierUpdate,
     SupplierResponse,
-    AnalyticsResponse,
+    SupplierUpdate,
 )
-from agents import product_service, movement_service, supplier_service, analytics_service
-from agents.import_service import import_products_from_csv, MAX_FILE_SIZE
-from agents.export_service import export_products_to_csv
-from agents.auth_deps import get_current_user, require_role
-from models.orm import User
 
 # ---------------------------------------------------------------------------
 # Routers
@@ -36,6 +34,7 @@ analytics_router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 # ---------------------------------------------------------------------------
 # Helper: build response dicts that include joined fields
 # ---------------------------------------------------------------------------
+
 
 def _product_response(product) -> dict:
     return {
@@ -82,10 +81,11 @@ def _supplier_response(supplier) -> dict:
 # Product endpoints
 # ---------------------------------------------------------------------------
 
+
 @product_router.get("", response_model=PaginatedProductsResponse)
 def list_products(
-    search: Optional[str] = Query(None),
-    category: Optional[str] = Query(None),
+    search: str | None = Query(None),
+    category: str | None = Query(None),
     low_stock: bool = Query(False),
     sort_by: str = Query("name"),
     sort_dir: str = Query("asc"),
@@ -119,8 +119,8 @@ def list_products(
 
 @product_router.get("/export")
 def export_products(
-    search: Optional[str] = Query(None),
-    category: Optional[str] = Query(None),
+    search: str | None = Query(None),
+    category: str | None = Query(None),
     low_stock: bool = Query(False),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
@@ -134,20 +134,28 @@ def export_products(
 
 
 @product_router.get("/{product_id}", response_model=ProductResponse)
-def get_product(product_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)):
+def get_product(
+    product_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)
+):
     product = product_service.get_product(db, product_id)
     return _product_response(product)
 
 
 @product_router.post("", response_model=ProductResponse, status_code=201)
-def create_product(data: ProductCreate, db: Session = Depends(get_db), _user: User = Depends(require_role("admin", "staff"))):
+def create_product(
+    data: ProductCreate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("admin", "staff")),
+):
     product = product_service.create_product(db, data)
     return _product_response(product)
 
 
 @product_router.put("/{product_id}", response_model=ProductResponse)
 def update_product(
-    product_id: int, data: ProductUpdate, db: Session = Depends(get_db),
+    product_id: int,
+    data: ProductUpdate,
+    db: Session = Depends(get_db),
     _user: User = Depends(require_role("admin", "staff")),
 ):
     product = product_service.update_product(db, product_id, data)
@@ -155,12 +163,18 @@ def update_product(
 
 
 @product_router.delete("/{product_id}", status_code=204)
-def delete_product(product_id: int, db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))):
+def delete_product(
+    product_id: int, db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))
+):
     product_service.delete_product(db, product_id)
 
 
 @product_router.post("/import")
-async def import_products(file: UploadFile = File(...), db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))):
+async def import_products(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("admin")),
+):
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are accepted")
 
@@ -171,7 +185,7 @@ async def import_products(file: UploadFile = File(...), db: Session = Depends(ge
     try:
         result = import_products_from_csv(db, content)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     return {
         "imported": result.imported,
@@ -184,10 +198,11 @@ async def import_products(file: UploadFile = File(...), db: Session = Depends(ge
 # Movement endpoints
 # ---------------------------------------------------------------------------
 
+
 @movement_router.get("", response_model=list[MovementResponse])
 def list_movements(
-    product_id: Optional[int] = Query(None),
-    type: Optional[str] = Query(None),
+    product_id: int | None = Query(None),
+    type: str | None = Query(None),
     limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
@@ -197,7 +212,11 @@ def list_movements(
 
 
 @movement_router.post("", response_model=MovementResponse, status_code=201)
-def create_movement(data: MovementCreate, db: Session = Depends(get_db), _user: User = Depends(require_role("admin", "staff"))):
+def create_movement(
+    data: MovementCreate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("admin", "staff")),
+):
     movement = movement_service.create_movement(db, data)
     return _movement_response(movement)
 
@@ -206,9 +225,10 @@ def create_movement(data: MovementCreate, db: Session = Depends(get_db), _user: 
 # Supplier endpoints
 # ---------------------------------------------------------------------------
 
+
 @supplier_router.get("", response_model=list[SupplierResponse])
 def list_suppliers(
-    search: Optional[str] = Query(None),
+    search: str | None = Query(None),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
@@ -217,20 +237,28 @@ def list_suppliers(
 
 
 @supplier_router.get("/{supplier_id}", response_model=SupplierResponse)
-def get_supplier(supplier_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)):
+def get_supplier(
+    supplier_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)
+):
     supplier = supplier_service.get_supplier(db, supplier_id)
     return _supplier_response(supplier)
 
 
 @supplier_router.post("", response_model=SupplierResponse, status_code=201)
-def create_supplier(data: SupplierCreate, db: Session = Depends(get_db), _user: User = Depends(require_role("admin", "staff"))):
+def create_supplier(
+    data: SupplierCreate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_role("admin", "staff")),
+):
     supplier = supplier_service.create_supplier(db, data)
     return _supplier_response(supplier)
 
 
 @supplier_router.put("/{supplier_id}", response_model=SupplierResponse)
 def update_supplier(
-    supplier_id: int, data: SupplierUpdate, db: Session = Depends(get_db),
+    supplier_id: int,
+    data: SupplierUpdate,
+    db: Session = Depends(get_db),
     _user: User = Depends(require_role("admin", "staff")),
 ):
     supplier = supplier_service.update_supplier(db, supplier_id, data)
@@ -238,13 +266,16 @@ def update_supplier(
 
 
 @supplier_router.delete("/{supplier_id}", status_code=204)
-def delete_supplier(supplier_id: int, db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))):
+def delete_supplier(
+    supplier_id: int, db: Session = Depends(get_db), _user: User = Depends(require_role("admin"))
+):
     supplier_service.delete_supplier(db, supplier_id)
 
 
 # ---------------------------------------------------------------------------
 # Analytics endpoints
 # ---------------------------------------------------------------------------
+
 
 @analytics_router.get("/dashboard", response_model=AnalyticsResponse)
 def dashboard_analytics(db: Session = Depends(get_db), _user: User = Depends(get_current_user)):
