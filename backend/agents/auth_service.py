@@ -3,7 +3,7 @@ Authentication service — JWT token management, password hashing, user CRUD.
 """
 
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from passlib.context import CryptContext
@@ -51,7 +51,9 @@ def decode_token(token: str) -> dict:
     return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
 
-def register_user(db: Session, username: str, email: str, password: str, role: str = "viewer") -> User:
+def register_user(
+    db: Session, username: str, email: str, password: str, role: str = "viewer"
+) -> User:
     """
     Create a new user account.
 

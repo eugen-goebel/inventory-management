@@ -1,21 +1,25 @@
 import sys
-import os
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
 
 # Ensure the backend package is importable
 BACKEND_DIR = str(Path(__file__).resolve().parent.parent)
 if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
-from db.database import Base, get_db
-from models.orm import Product, Supplier, StockMovement, User  # noqa: F401 — import to register with Base
-from agents.auth_service import hash_password, create_access_token
-from main import app
+from agents.auth_service import create_access_token, hash_password  # noqa: E402
+from db.database import Base, get_db  # noqa: E402
+from main import app  # noqa: E402
+from models.orm import (  # noqa: E402,F401 — import to register with Base
+    Product,
+    StockMovement,
+    Supplier,
+    User,
+)
 
 # Ensure all ORM models are registered before create_all
 assert User.__tablename__ == "users"
@@ -170,9 +174,24 @@ def seed_data(client, db_session):
     """
     suppliers = []
     supplier_payloads = [
-        {"name": "TechDistri GmbH", "contact_email": "info@techdistri.de", "phone": "+49 30 12345", "country": "Deutschland"},
-        {"name": "OfficeWorld AG", "contact_email": "kontakt@officeworld.de", "phone": "+49 40 67890", "country": "Deutschland"},
-        {"name": "NetParts Ltd", "contact_email": "sales@netparts.co.uk", "phone": "+44 20 55555", "country": "UK"},
+        {
+            "name": "TechDistri GmbH",
+            "contact_email": "info@techdistri.de",
+            "phone": "+49 30 12345",
+            "country": "Deutschland",
+        },
+        {
+            "name": "OfficeWorld AG",
+            "contact_email": "kontakt@officeworld.de",
+            "phone": "+49 40 67890",
+            "country": "Deutschland",
+        },
+        {
+            "name": "NetParts Ltd",
+            "contact_email": "sales@netparts.co.uk",
+            "phone": "+44 20 55555",
+            "country": "UK",
+        },
     ]
     for payload in supplier_payloads:
         resp = client.post("/api/suppliers", json=payload)
@@ -181,11 +200,46 @@ def seed_data(client, db_session):
 
     products = []
     product_payloads = [
-        {"name": "Laptop Pro 15", "sku": "LP-001", "category": "Elektronik", "supplier_id": suppliers[0]["id"], "unit_price": 1299.99, "reorder_level": 5},
-        {"name": "Schreibtischstuhl Ergo", "sku": "MS-001", "category": "Moebel", "supplier_id": suppliers[1]["id"], "unit_price": 349.00, "reorder_level": 10},
-        {"name": "Cat6 Kabel 5m", "sku": "NK-001", "category": "Netzwerk", "supplier_id": suppliers[2]["id"], "unit_price": 8.50, "reorder_level": 50},
-        {"name": "USB-Maus Wireless", "sku": "PE-001", "category": "Peripherie", "supplier_id": suppliers[0]["id"], "unit_price": 24.99, "reorder_level": 20},
-        {"name": "Druckerpapier A4 500 Blatt", "sku": "BM-001", "category": "Bueromaterial", "supplier_id": suppliers[1]["id"], "unit_price": 4.99, "reorder_level": 100},
+        {
+            "name": "Laptop Pro 15",
+            "sku": "LP-001",
+            "category": "Elektronik",
+            "supplier_id": suppliers[0]["id"],
+            "unit_price": 1299.99,
+            "reorder_level": 5,
+        },
+        {
+            "name": "Schreibtischstuhl Ergo",
+            "sku": "MS-001",
+            "category": "Moebel",
+            "supplier_id": suppliers[1]["id"],
+            "unit_price": 349.00,
+            "reorder_level": 10,
+        },
+        {
+            "name": "Cat6 Kabel 5m",
+            "sku": "NK-001",
+            "category": "Netzwerk",
+            "supplier_id": suppliers[2]["id"],
+            "unit_price": 8.50,
+            "reorder_level": 50,
+        },
+        {
+            "name": "USB-Maus Wireless",
+            "sku": "PE-001",
+            "category": "Peripherie",
+            "supplier_id": suppliers[0]["id"],
+            "unit_price": 24.99,
+            "reorder_level": 20,
+        },
+        {
+            "name": "Druckerpapier A4 500 Blatt",
+            "sku": "BM-001",
+            "category": "Bueromaterial",
+            "supplier_id": suppliers[1]["id"],
+            "unit_price": 4.99,
+            "reorder_level": 100,
+        },
     ]
     for payload in product_payloads:
         resp = client.post("/api/products", json=payload)
@@ -195,16 +249,67 @@ def seed_data(client, db_session):
     # Create 10 stock movements (all "in" first to build up stock)
     movements = []
     movement_payloads = [
-        {"product_id": products[0]["id"], "movement_type": "in", "quantity": 20, "reference": "PO-1001", "notes": "Erstlieferung"},
-        {"product_id": products[1]["id"], "movement_type": "in", "quantity": 15, "reference": "PO-1002"},
-        {"product_id": products[2]["id"], "movement_type": "in", "quantity": 200, "reference": "PO-1003"},
-        {"product_id": products[3]["id"], "movement_type": "in", "quantity": 50, "reference": "PO-1004"},
-        {"product_id": products[4]["id"], "movement_type": "in", "quantity": 80, "reference": "PO-1005"},
-        {"product_id": products[0]["id"], "movement_type": "out", "quantity": 3, "reference": "SO-2001"},
-        {"product_id": products[1]["id"], "movement_type": "out", "quantity": 10, "reference": "SO-2002"},
-        {"product_id": products[2]["id"], "movement_type": "in", "quantity": 100, "reference": "PO-1006"},
-        {"product_id": products[3]["id"], "movement_type": "out", "quantity": 40, "reference": "SO-2003"},
-        {"product_id": products[4]["id"], "movement_type": "out", "quantity": 75, "reference": "SO-2004"},
+        {
+            "product_id": products[0]["id"],
+            "movement_type": "in",
+            "quantity": 20,
+            "reference": "PO-1001",
+            "notes": "Erstlieferung",
+        },
+        {
+            "product_id": products[1]["id"],
+            "movement_type": "in",
+            "quantity": 15,
+            "reference": "PO-1002",
+        },
+        {
+            "product_id": products[2]["id"],
+            "movement_type": "in",
+            "quantity": 200,
+            "reference": "PO-1003",
+        },
+        {
+            "product_id": products[3]["id"],
+            "movement_type": "in",
+            "quantity": 50,
+            "reference": "PO-1004",
+        },
+        {
+            "product_id": products[4]["id"],
+            "movement_type": "in",
+            "quantity": 80,
+            "reference": "PO-1005",
+        },
+        {
+            "product_id": products[0]["id"],
+            "movement_type": "out",
+            "quantity": 3,
+            "reference": "SO-2001",
+        },
+        {
+            "product_id": products[1]["id"],
+            "movement_type": "out",
+            "quantity": 10,
+            "reference": "SO-2002",
+        },
+        {
+            "product_id": products[2]["id"],
+            "movement_type": "in",
+            "quantity": 100,
+            "reference": "PO-1006",
+        },
+        {
+            "product_id": products[3]["id"],
+            "movement_type": "out",
+            "quantity": 40,
+            "reference": "SO-2003",
+        },
+        {
+            "product_id": products[4]["id"],
+            "movement_type": "out",
+            "quantity": 75,
+            "reference": "SO-2004",
+        },
     ]
     for payload in movement_payloads:
         resp = client.post("/api/movements", json=payload)

@@ -1,11 +1,8 @@
-from typing import Optional
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Query, Session
 
 from models.orm import Product, Supplier
 from models.schemas import ProductCreate, ProductUpdate
-
 
 _DIRECT_SORTABLE = {
     "name": Product.name,
@@ -21,17 +18,15 @@ SORTABLE_FIELDS = set(_DIRECT_SORTABLE) | {"supplier_name"}
 
 def _filter_query(
     db: Session,
-    search: Optional[str],
-    category: Optional[str],
+    search: str | None,
+    category: str | None,
     low_stock_only: bool,
 ) -> Query:
     query = db.query(Product)
 
     if search:
         pattern = f"%{search}%"
-        query = query.filter(
-            (Product.name.ilike(pattern)) | (Product.sku.ilike(pattern))
-        )
+        query = query.filter((Product.name.ilike(pattern)) | (Product.sku.ilike(pattern)))
 
     if category:
         query = query.filter(Product.category == category)
@@ -44,12 +39,12 @@ def _filter_query(
 
 def list_products(
     db: Session,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
+    search: str | None = None,
+    category: str | None = None,
     low_stock_only: bool = False,
     sort_by: str = "name",
     sort_dir: str = "asc",
-    limit: Optional[int] = None,
+    limit: int | None = None,
     offset: int = 0,
 ) -> list[Product]:
     """Return products with optional filtering, sorting and pagination."""
@@ -70,8 +65,8 @@ def list_products(
 
 def count_products(
     db: Session,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
+    search: str | None = None,
+    category: str | None = None,
     low_stock_only: bool = False,
 ) -> int:
     """Count products matching the same filters as list_products."""

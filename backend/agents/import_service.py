@@ -7,8 +7,6 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
 from models.orm import Product
-from models.schemas import ProductCreate
-
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_ROW_COUNT = 10_000
@@ -62,7 +60,9 @@ def import_products_from_csv(db: Session, content: bytes) -> ImportResult:
 
     for row_num, row in enumerate(reader, start=2):
         if row_num - 1 > MAX_ROW_COUNT:
-            result.errors.append({"row": row_num, "error": f"Exceeded maximum of {MAX_ROW_COUNT} rows"})
+            result.errors.append(
+                {"row": row_num, "error": f"Exceeded maximum of {MAX_ROW_COUNT} rows"}
+            )
             break
 
         # Normalize keys
@@ -101,7 +101,9 @@ def import_products_from_csv(db: Session, content: bytes) -> ImportResult:
             try:
                 supplier_id = int(row["supplier_id"])
             except (ValueError, TypeError):
-                result.errors.append({"row": row_num, "error": f"Invalid supplier_id: {row['supplier_id']}"})
+                result.errors.append(
+                    {"row": row_num, "error": f"Invalid supplier_id: {row['supplier_id']}"}
+                )
                 result.skipped += 1
                 continue
 
@@ -112,7 +114,9 @@ def import_products_from_csv(db: Session, content: bytes) -> ImportResult:
                 if reorder_level < 0:
                     raise ValueError()
             except (ValueError, TypeError):
-                result.errors.append({"row": row_num, "error": f"Invalid reorder_level: {row['reorder_level']}"})
+                result.errors.append(
+                    {"row": row_num, "error": f"Invalid reorder_level: {row['reorder_level']}"}
+                )
                 result.skipped += 1
                 continue
 

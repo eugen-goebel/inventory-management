@@ -3,17 +3,17 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from db.database import init_db
-from agents.routes import (
-    product_router,
-    movement_router,
-    supplier_router,
-    analytics_router,
-)
 from agents.auth_routes import auth_router
+from agents.routes import (
+    analytics_router,
+    movement_router,
+    product_router,
+    supplier_router,
+)
+from db.database import init_db
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
