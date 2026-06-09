@@ -1,7 +1,5 @@
 """Tests for supplier endpoints."""
 
-import pytest
-
 
 class TestListSuppliers:
     """GET /api/suppliers"""
@@ -78,10 +76,13 @@ class TestDeleteSupplier:
 
     def test_delete_without_products_succeeds(self, client):
         # Create a supplier with no products
-        create_resp = client.post("/api/suppliers", json={
-            "name": "Zum Loeschen",
-            "country": "Test",
-        })
+        create_resp = client.post(
+            "/api/suppliers",
+            json={
+                "name": "Zum Loeschen",
+                "country": "Test",
+            },
+        )
         assert create_resp.status_code == 201
         sid = create_resp.json()["id"]
 

@@ -1,29 +1,29 @@
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Product
 # ---------------------------------------------------------------------------
 
+
 class ProductCreate(BaseModel):
     name: str
     sku: str
     category: str
-    supplier_id: Optional[int] = None
+    supplier_id: int | None = None
     unit_price: float = Field(gt=0)
     reorder_level: int = Field(ge=0, default=10)
 
 
 class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    sku: Optional[str] = None
-    category: Optional[str] = None
-    supplier_id: Optional[int] = None
-    unit_price: Optional[float] = Field(default=None, gt=0)
-    reorder_level: Optional[int] = Field(default=None, ge=0)
+    name: str | None = None
+    sku: str | None = None
+    category: str | None = None
+    supplier_id: int | None = None
+    unit_price: float | None = Field(default=None, gt=0)
+    reorder_level: int | None = Field(default=None, ge=0)
 
 
 class ProductResponse(BaseModel):
@@ -31,13 +31,13 @@ class ProductResponse(BaseModel):
     name: str
     sku: str
     category: str
-    supplier_id: Optional[int]
-    supplier_name: Optional[str]
+    supplier_id: int | None
+    supplier_name: str | None
     unit_price: float
     reorder_level: int
     current_stock: int
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -53,12 +53,13 @@ class PaginatedProductsResponse(BaseModel):
 # Stock Movement
 # ---------------------------------------------------------------------------
 
+
 class MovementCreate(BaseModel):
     product_id: int
     movement_type: Literal["in", "out"]
     quantity: int = Field(gt=0)
-    reference: Optional[str] = None
-    notes: Optional[str] = None
+    reference: str | None = None
+    notes: str | None = None
 
 
 class MovementResponse(BaseModel):
@@ -67,8 +68,8 @@ class MovementResponse(BaseModel):
     product_name: str
     movement_type: str
     quantity: int
-    reference: Optional[str]
-    notes: Optional[str]
+    reference: str | None
+    notes: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -78,26 +79,27 @@ class MovementResponse(BaseModel):
 # Supplier
 # ---------------------------------------------------------------------------
 
+
 class SupplierCreate(BaseModel):
     name: str
-    contact_email: Optional[str] = None
-    phone: Optional[str] = None
-    country: Optional[str] = None
+    contact_email: str | None = None
+    phone: str | None = None
+    country: str | None = None
 
 
 class SupplierUpdate(BaseModel):
-    name: Optional[str] = None
-    contact_email: Optional[str] = None
-    phone: Optional[str] = None
-    country: Optional[str] = None
+    name: str | None = None
+    contact_email: str | None = None
+    phone: str | None = None
+    country: str | None = None
 
 
 class SupplierResponse(BaseModel):
     id: int
     name: str
-    contact_email: Optional[str]
-    phone: Optional[str]
-    country: Optional[str]
+    contact_email: str | None
+    phone: str | None
+    country: str | None
     product_count: int
     created_at: datetime
 
@@ -107,6 +109,7 @@ class SupplierResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Analytics
 # ---------------------------------------------------------------------------
+
 
 class AnalyticsResponse(BaseModel):
     total_products: int
@@ -121,6 +124,7 @@ class AnalyticsResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
+
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=50)

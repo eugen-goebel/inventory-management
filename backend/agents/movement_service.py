@@ -1,9 +1,7 @@
-from typing import Optional
-
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from models.orm import StockMovement, Product
+from models.orm import Product, StockMovement
 from models.schemas import MovementCreate
 
 
@@ -40,8 +38,8 @@ def create_movement(db: Session, data: MovementCreate) -> StockMovement:
 
 def list_movements(
     db: Session,
-    product_id: Optional[int] = None,
-    movement_type: Optional[str] = None,
+    product_id: int | None = None,
+    movement_type: str | None = None,
     limit: int = 50,
 ) -> list[StockMovement]:
     """Return stock movements with optional filtering."""
@@ -58,9 +56,7 @@ def list_movements(
 
 def get_movement(db: Session, movement_id: int) -> StockMovement:
     """Return a single movement or raise 404."""
-    movement = (
-        db.query(StockMovement).filter(StockMovement.id == movement_id).first()
-    )
+    movement = db.query(StockMovement).filter(StockMovement.id == movement_id).first()
     if not movement:
         raise HTTPException(status_code=404, detail="Bewegung nicht gefunden")
     return movement

@@ -1,9 +1,9 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from models.orm import Product, StockMovement, Supplier
+from models.orm import Product, StockMovement
 from models.schemas import AnalyticsResponse
 
 
@@ -27,9 +27,7 @@ def get_dashboard_analytics(db: Session) -> AnalyticsResponse:
     )
 
     # Movements today
-    today_start = datetime.now(timezone.utc).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     total_movements_today = (
         db.query(func.count(StockMovement.id))
         .filter(StockMovement.created_at >= today_start)
@@ -83,12 +81,7 @@ def get_dashboard_analytics(db: Session) -> AnalyticsResponse:
     ]
 
     # Recent 10 movements
-    recent_rows = (
-        db.query(StockMovement)
-        .order_by(StockMovement.created_at.desc())
-        .limit(10)
-        .all()
-    )
+    recent_rows = db.query(StockMovement).order_by(StockMovement.created_at.desc()).limit(10).all()
     recent_movements = [
         {
             "id": m.id,

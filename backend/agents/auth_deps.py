@@ -4,11 +4,11 @@ FastAPI authentication dependencies — token verification and role checks.
 
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from db.database import get_db
 from agents.auth_service import decode_token, get_user_by_id
+from db.database import get_db
 from models.orm import User
 
 security = HTTPBearer()
@@ -26,12 +26,12 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
-        )
+        ) from None
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
-        )
+        ) from None
 
     user_id = int(payload["sub"])
     user = get_user_by_id(db, user_id)
@@ -50,6 +50,7 @@ def require_role(*allowed_roles: str):
     Usage:
         @router.post("/", dependencies=[Depends(require_role("admin", "staff"))])
     """
+
     def _check(user: User = Depends(get_current_user)) -> User:
         if user.role not in allowed_roles:
             raise HTTPException(
@@ -57,4 +58,5 @@ def require_role(*allowed_roles: str):
                 detail=f"Role '{user.role}' does not have permission for this action",
             )
         return user
+
     return _check

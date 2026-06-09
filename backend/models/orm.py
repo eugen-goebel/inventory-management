@@ -2,13 +2,13 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Integer,
     String,
-    Float,
-    DateTime,
-    ForeignKey,
-    CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 

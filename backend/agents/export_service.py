@@ -2,12 +2,10 @@
 
 import csv
 import io
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
 from agents import product_service
-
 
 CSV_COLUMNS = [
     "sku",
@@ -22,8 +20,8 @@ CSV_COLUMNS = [
 
 def export_products_to_csv(
     db: Session,
-    search: Optional[str] = None,
-    category: Optional[str] = None,
+    search: str | None = None,
+    category: str | None = None,
     low_stock_only: bool = False,
 ) -> str:
     """Return a CSV string of products matching the given filters."""
@@ -34,14 +32,16 @@ def export_products_to_csv(
     writer.writeheader()
 
     for product in products:
-        writer.writerow({
-            "sku": product.sku,
-            "name": product.name,
-            "category": product.category,
-            "supplier_name": product.supplier.name if product.supplier else "",
-            "unit_price": f"{product.unit_price:.2f}",
-            "current_stock": product.current_stock,
-            "reorder_level": product.reorder_level,
-        })
+        writer.writerow(
+            {
+                "sku": product.sku,
+                "name": product.name,
+                "category": product.category,
+                "supplier_name": product.supplier.name if product.supplier else "",
+                "unit_price": f"{product.unit_price:.2f}",
+                "current_stock": product.current_stock,
+                "reorder_level": product.reorder_level,
+            }
+        )
 
     return buffer.getvalue()
