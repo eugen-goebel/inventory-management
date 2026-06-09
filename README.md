@@ -80,11 +80,13 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 ### With Docker
 
 ```bash
-docker build -t inventory-management .
-docker run -p 8000:8000 inventory-management
+docker compose up
 ```
 
-Open http://localhost:8000 in your browser.
+This builds and starts the FastAPI backend and the React frontend. Open
+http://localhost:8080 in your browser. The frontend serves the app and
+proxies API calls to the backend, which keeps its SQLite database in a
+named volume.
 
 ### Manual Setup
 
