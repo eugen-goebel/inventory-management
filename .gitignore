@@ -21,3 +21,5 @@ frontend/dist/
 .coverage
 coverage.xml
 htmlcov/
+
+backend/*.db
