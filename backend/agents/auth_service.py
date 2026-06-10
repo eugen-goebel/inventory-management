@@ -1,12 +1,12 @@
 """
-Authentication service — JWT token management, password hashing, user CRUD.
+Authentication service: JWT token management, password hashing, user CRUD.
 """
 
 import os
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from models.orm import User
@@ -15,15 +15,20 @@ SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt only uses the first 72 bytes of a password. passlib used to
+# truncate silently, bcrypt 5 raises instead, so truncate explicitly to
+# keep accepting long passwords.
+_BCRYPT_MAX_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pw = password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    return bcrypt.hashpw(pw, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    pw = plain.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    return bcrypt.checkpw(pw, hashed.encode("utf-8"))
 
 
 def create_access_token(user_id: int, username: str, role: str) -> str:
