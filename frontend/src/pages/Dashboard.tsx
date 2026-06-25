@@ -100,7 +100,7 @@ export default function Dashboard() {
                   tickFormatter={(v: number) => formatEur(v)}
                 />
                 <Tooltip
-                  formatter={(value: number) => formatEur(value)}
+                  formatter={(value) => formatEur(Number(value))}
                   labelStyle={{ fontWeight: 600 }}
                 />
                 <Bar dataKey="total_value" radius={[4, 4, 0, 0]}>
@@ -138,7 +138,7 @@ export default function Dashboard() {
                   fontSize={11}
                 />
                 <Tooltip
-                  formatter={(value: number) => formatEur(value)}
+                  formatter={(value) => formatEur(Number(value))}
                   labelStyle={{ fontWeight: 600 }}
                 />
                 <Bar dataKey="stock_value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
