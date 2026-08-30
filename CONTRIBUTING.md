@@ -20,7 +20,9 @@ This is a full-stack project. You will need both Python and Node.js installed.
    ```
 4. Copy `.env.example` to `.env` and fill in values. The backend loads it on
    startup. Real environment variables take precedence, which is how
-   docker-compose passes `DATABASE_URL`.
+   docker-compose passes `DATABASE_URL`. For local work the defaults are
+   enough, no setup needed. A deployment sets `APP_ENV=production`, and the
+   backend then refuses to start without a real `JWT_SECRET_KEY`.
 5. Run the backend:
    ```bash
    cd backend && uvicorn main:app --reload

@@ -2,6 +2,7 @@
 Authentication service: JWT token management, password hashing, user CRUD.
 """
 
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -11,7 +12,49 @@ from sqlalchemy.orm import Session
 
 from models.orm import User
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-change-in-production")
+logger = logging.getLogger(__name__)
+
+_DEV_SECRET = "dev-secret-change-in-production"
+
+
+def _load_secret_key() -> str:
+    """Return the JWT signing key, refusing the development default in production.
+
+    Tokens signed with _DEV_SECRET are forgeable by anyone, the string is in
+    this file in a public repository. Deployments therefore have to set
+    JWT_SECRET_KEY. Set APP_ENV=production to enforce that: without it the
+    development default still applies, so tests and a local checkout keep
+    working with no setup.
+    """
+    key = os.getenv("JWT_SECRET_KEY")
+    is_production = os.getenv("APP_ENV", "development").lower() == "production"
+
+    if is_production and not key:
+        raise RuntimeError(
+            "JWT_SECRET_KEY must be set when APP_ENV=production. "
+            "Without it every token would be signed with the development "
+            "default, which is public. Generate one with: "
+            "python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+    if is_production and key == _DEV_SECRET:
+        raise RuntimeError(
+            "JWT_SECRET_KEY is set to the development default, which is public. "
+            "Generate a real one with: "
+            "python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+        )
+
+    if not key:
+        # Say so once at startup, otherwise running on the public default is
+        # invisible until someone forges a token.
+        logger.warning(
+            "JWT_SECRET_KEY is not set, falling back to the development default. "
+            "Do not expose this instance."
+        )
+
+    return key or _DEV_SECRET
+
+
+SECRET_KEY = _load_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
