@@ -1,19 +1,24 @@
 import os
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from agents.auth_routes import auth_router
-from agents.routes import (
+# Must run before the imports below: agents.auth_service reads JWT_SECRET_KEY
+# at module level, so a .env loaded any later would have no effect.
+load_dotenv()
+
+from agents.auth_routes import auth_router  # noqa: E402
+from agents.routes import (  # noqa: E402
     analytics_router,
     movement_router,
     product_router,
     supplier_router,
 )
-from db.database import init_db
+from db.database import init_db  # noqa: E402
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
