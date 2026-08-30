@@ -18,7 +18,9 @@ This is a full-stack project. You will need both Python and Node.js installed.
    ```bash
    pip install -r requirements.txt
    ```
-4. Copy `.env.example` to `.env` and fill in values.
+4. Copy `.env.example` to `.env` and fill in values. The backend loads it on
+   startup. Real environment variables take precedence, which is how
+   docker-compose passes `DATABASE_URL`.
 5. Run the backend:
    ```bash
    cd backend && uvicorn main:app --reload
