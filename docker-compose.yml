@@ -3,6 +3,13 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: sqlite:////data/inventory.db
+      # This stack is the local demo, so it deliberately stays on
+      # APP_ENV=development and the built-in JWT default. For a real
+      # deployment set both:
+      #   APP_ENV: production
+      #   JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      # The backend refuses to start in production without a key.
+      APP_ENV: development
     volumes:
       - inventory-data:/data
     expose:
