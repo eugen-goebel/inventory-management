@@ -1,10 +1,12 @@
+# Runtime dependencies for the Docker images.
+# pyproject.toml + uv.lock stay the source of truth for local dev and CI.
+# This is the subset the FastAPI service needs at runtime. PyJWT and bcrypt
+# back the authentication in agents/auth_service.py, python-multipart is
+# required for the CSV upload endpoint in agents/routes.py.
 fastapi>=0.141.1
 uvicorn>=0.52.4
 sqlalchemy>=2.0.52
 pydantic>=2.13.4
-python-dotenv>=1.2.3
 python-multipart>=0.0.32
 PyJWT>=2.13.0
 bcrypt>=4.0.0
-pytest>=9.1.1
-httpx>=0.28.1
