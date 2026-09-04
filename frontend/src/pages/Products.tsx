@@ -38,6 +38,30 @@ function formatNumber(value: number): string {
   return value.toLocaleString("de-DE");
 }
 
+// Defined at module level rather than inside Products(). A component declared
+// in the body of another component is a brand new type on every render, so
+// React unmounts and remounts it instead of updating it, losing any state and
+// focus it held. Here it only draws an icon, but the pattern is a trap and
+// react-hooks/static-components flags it.
+function SortIcon({
+  field,
+  sortBy,
+  sortDir,
+}: {
+  field: ProductSortField;
+  sortBy: ProductSortField;
+  sortDir: SortDirection;
+}) {
+  if (sortBy !== field) {
+    return <ChevronsUpDown className="w-3 h-3 inline-block ml-1 text-gray-400" />;
+  }
+  return sortDir === "asc" ? (
+    <ChevronUp className="w-3 h-3 inline-block ml-1 text-blue-600" />
+  ) : (
+    <ChevronDown className="w-3 h-3 inline-block ml-1 text-blue-600" />
+  );
+}
+
 const emptyForm: ProductCreate = {
   name: "",
   sku: "",
@@ -116,17 +140,6 @@ export default function Products() {
       setSortDir("asc");
     }
     setOffset(0);
-  }
-
-  function SortIcon({ field }: { field: ProductSortField }) {
-    if (sortBy !== field) {
-      return <ChevronsUpDown className="w-3 h-3 inline-block ml-1 text-gray-400" />;
-    }
-    return sortDir === "asc" ? (
-      <ChevronUp className="w-3 h-3 inline-block ml-1 text-blue-600" />
-    ) : (
-      <ChevronDown className="w-3 h-3 inline-block ml-1 text-blue-600" />
-    );
   }
 
   useEffect(() => {
@@ -323,49 +336,49 @@ export default function Products() {
                   className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
                 >
                   SKU
-                  <SortIcon field="sku" />
+                  <SortIcon field="sku" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("name")}
                   className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
                 >
                   Name
-                  <SortIcon field="name" />
+                  <SortIcon field="name" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("category")}
                   className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
                 >
                   Category
-                  <SortIcon field="category" />
+                  <SortIcon field="category" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("supplier_name")}
                   className="px-4 py-3 font-medium cursor-pointer select-none hover:text-gray-700"
                 >
                   Supplier
-                  <SortIcon field="supplier_name" />
+                  <SortIcon field="supplier_name" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("unit_price")}
                   className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
                 >
                   Price
-                  <SortIcon field="unit_price" />
+                  <SortIcon field="unit_price" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("current_stock")}
                   className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
                 >
                   Stock
-                  <SortIcon field="current_stock" />
+                  <SortIcon field="current_stock" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th
                   onClick={() => toggleSort("reorder_level")}
                   className="px-4 py-3 font-medium text-right cursor-pointer select-none hover:text-gray-700"
                 >
                   Reorder Level
-                  <SortIcon field="reorder_level" />
+                  <SortIcon field="reorder_level" sortBy={sortBy} sortDir={sortDir} />
                 </th>
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
