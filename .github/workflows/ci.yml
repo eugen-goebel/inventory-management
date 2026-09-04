@@ -73,6 +73,13 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      # Without this step the linter can rot again: the config file was
+      # missing for the whole life of the project and nothing noticed,
+      # because no job ever ran it.
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+
       - name: Run tests
         working-directory: frontend
         run: npm test
