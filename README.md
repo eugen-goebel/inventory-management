@@ -5,7 +5,6 @@ Full-stack inventory management system with a React/TypeScript frontend and Fast
 ![CI](https://github.com/eugen-goebel/inventory-management/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6)
-![Tests](https://img.shields.io/badge/Tests-Backend_30+_Frontend_8-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Screenshots
