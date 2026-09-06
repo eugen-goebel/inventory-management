@@ -112,3 +112,33 @@ jobs:
       - name: Tear down
         if: always()
         run: docker compose down
+
+  single-container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build the single-container image
+        run: docker build -t inventory-single .
+
+      - name: Start it
+        run: |
+          docker run -d --name inventory-single -p 8000:8000 \
+            -e APP_ENV=development inventory-single
+
+      - name: Wait for the API
+        run: |
+          for i in $(seq 1 40); do
+            if curl -fsS http://localhost:8000/api/health >/dev/null; then echo "up"; exit 0; fi
+            sleep 3
+          done
+          echo "container did not become healthy"
+          docker logs inventory-single
+          exit 1
+
+      - name: Check FastAPI serves the built frontend
+        run: curl -fsS http://localhost:8000/ | grep -qi "<!doctype html"
+
+      - name: Tear down
+        if: always()
+        run: docker rm -f inventory-single

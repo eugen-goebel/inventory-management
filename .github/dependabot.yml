@@ -26,8 +26,14 @@ updates:
       - "dependencies"
       - "ci"
 
+  # The root Dockerfile is the single-container build, backend/ and frontend/
+  # are what docker compose runs. All three must move together, so Dependabot
+  # watches all three directories.
   - package-ecosystem: "docker"
-    directory: "/"
+    directories:
+      - "/"
+      - "/backend"
+      - "/frontend"
     schedule:
       interval: "monthly"
     labels:
