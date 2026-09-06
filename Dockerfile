@@ -6,7 +6,7 @@
 # Keep the versions here in sync with those two files and with the CI matrix,
 # otherwise this image silently drifts onto untested runtimes.
 
-FROM node:24-slim AS frontend-build
+FROM node:26-slim AS frontend-build
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
