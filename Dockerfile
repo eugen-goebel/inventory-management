@@ -1,4 +1,12 @@
-FROM node:26-slim AS frontend-build
+# Single-container build: the frontend is compiled and served by FastAPI
+# from /app/static (see the STATIC_DIR branch in backend/main.py).
+#
+# This is NOT what `docker compose` builds. Compose runs backend/Dockerfile
+# and frontend/Dockerfile as two separate services behind an nginx proxy.
+# Keep the versions here in sync with those two files and with the CI matrix,
+# otherwise this image silently drifts onto untested runtimes.
+
+FROM node:24-slim AS frontend-build
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
@@ -6,7 +14,7 @@ RUN npm install
 COPY frontend/ .
 RUN npm run build
 
-FROM python:3.14-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
